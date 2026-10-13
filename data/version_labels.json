@@ -1,0 +1,1 @@
+{"_readme":"Scenario names for targets underwritten in more than one file, keyed by file number. A value is a name, or {\"label\": name, \"default\": true} to open that scenario first. Otherwise the lowest file number opens first; unnamed files show as 'File NN'."}

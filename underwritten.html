@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<title>Millersburg Underwriting Map</title>
+<meta name="description" content="Millersburg, OH (Holmes County) underwriting map: the market's Airbnb comps, acquisition targets and comp sets on one map." />
+<link rel="icon" href="assets/branding/strsearch-logo.webp" type="image/webp" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="css/styles.css?v=20261007-m7" />
+<link rel="stylesheet" href="css/underwritten.css?v=20261013-mb1" />
+</head>
+<body class="uw-page">
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <div class="site-header__brand">
+      <a href="underwritten.html" class="uw-brandlink" aria-label="Millersburg underwriting map, top of the page"><img class="site-header__logo" src="assets/branding/strsearch-logo.webp" alt="STR Search" /></a>
+      <div class="site-header__title">Millersburg, OH <span>Underwriting map</span></div>
+    </div>
+    <nav class="site-nav" aria-label="Page sections">
+      <a href="#uw-map">Map</a>
+      <a href="#uw-properties">Targets</a>
+      <a href="#uw-checks">Data checks</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="uw-top" class="section section--hero uw-hero">
+    <div class="container">
+      <p class="section-kicker">Underwriting</p>
+      <h1>Millersburg underwriting map</h1>
+      <p class="hero-sub">Millersburg’s Airbnb comps, the 62 entire homes in the workbook’s Cleaned_Data, on one map with the acquisition targets (the Zillow houses being underwritten). Add a Zillow listing to place it on the map, rank its nearest comps in the same zone (inside the village limits or out in the countryside) earning $40k or more, or rank the whole market by amenities. Then build its comp set and copy the rows straight into your sheet.</p>
+      <div class="uw-hstats" id="uw-hero-stats"></div>
+    </div>
+  </section>
+
+  <section id="uw-map" class="section uw-map-section" aria-label="Map of acquisition targets and Airbnb comps">
+    <div class="container uw-wide">
+      <div id="uw-boot" class="uw-boot"><p class="uw-hint">Loading the map and the underwriting…</p></div>
+      <div class="uw-split">
+        <div class="uw-mapwrap"><div id="uw-leaflet" class="uw-leaflet" role="application" aria-label="Map of Millersburg: acquisition targets as houses (underwritten) and pins (new listings), Airbnb comps as dots, the village limits dashed"></div></div>
+        <aside class="uw-panel" id="uw-panel" aria-label="Nearest comps, filters and map layers"></aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="uw-properties" class="section">
+    <div class="container">
+      <p class="section-kicker">Acquisition targets</p>
+      <div class="uw-list-head">
+        <h2>Acquisition targets, one card each</h2>
+        <div class="uw-list-ctl" id="uw-list-ctl"></div>
+      </div>
+      <div id="uw-lists">
+        <h3 class="uw-group">Acquisition targets · underwritten <span id="uw-n-uw" class="uw-count"></span></h3>
+        <div id="uw-cards-uw" class="uw-cards"></div>
+        <h3 class="uw-group">Acquisition targets · new listings <span id="uw-n-new" class="uw-count"></span></h3>
+        <div id="uw-cards-new" class="uw-cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="uw-checks" class="section">
+    <div class="container">
+      <p class="section-kicker">Data checks</p>
+      <h2>Comp audit</h2>
+      <p class="subsection-lede">Every comp row in every sheet, checked against the workbook. Nothing is corrected or removed automatically; each row gets one class so you can decide.</p>
+      <div id="uw-checks-body"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container"><p id="uw-footer"></p></div>
+</footer>
+
+<dialog id="uw-add-dialog" class="uw-dialog" aria-label="Add or edit a listing"></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/underwritten/uw-math.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-csv.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-geo.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-rules.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-app.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-map.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-actions.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-panel.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-sheet.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-cards.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-add.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-checks.js?v=20261013-mb1"></script>
+<script src="js/underwritten/uw-main.js?v=20261013-mb1"></script>
+</body>
+</html>
