@@ -20,7 +20,7 @@
 /* global UWMath, UWGeo, UWCsv, UWRules */
 (function () {
   const UW = (window.UW = {});
-  UW.VERSION = "20261013-mb1";
+  UW.VERSION = "20261013-mb2";
   const LS_KEY = "millersburgUW.v1";
 
   // ---------------------------------------------------------------------------

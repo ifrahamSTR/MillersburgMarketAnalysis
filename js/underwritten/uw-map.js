@@ -80,7 +80,7 @@
   function styleFor(l, state) {
     const c = UW.colorOf(l);
     // Only 62 comps here, so a filtered-out home stays easy to see (grey, smaller, outlined).
-    if (state === "ghost") return UW.ui.layers.ghosts ? { radius: 3.4, fillColor: "#8d99a2", fillOpacity: 0.7, color: "#fff", weight: 0.8, opacity: 0.9 } : { radius: 0, fillOpacity: 0, opacity: 0, weight: 0 };
+    if (state === "ghost") return UW.ui.layers.ghosts ? { radius: 4, fillColor: "#76838c", fillOpacity: 0.9, color: "#fff", weight: 1.3, opacity: 1 } : { radius: 0, fillOpacity: 0, opacity: 0, weight: 0 };
     if (state === "dim") return { radius: 3.6, fillColor: c, fillOpacity: 0.25, color: "#fff", weight: 0.5, opacity: 0.35 };
     if (state === "hl") return { radius: 7.5, fillColor: c, fillOpacity: 1, color: "#0b2f28", weight: 2.2, opacity: 1 };
     if (state === "am") return { radius: 7.5, fillColor: c, fillOpacity: 1, color: amRing(l._amFrac), weight: 4, opacity: 1 };
@@ -250,7 +250,7 @@
       '<span class="uw-legend__i"><i class="uw-legend__ring"></i>In the selected comp set</span>' +
       (UW.ui.selected && UW.ui.mode === "amenity" && !UW.ui.pure ? '<p class="uw-legend__t">Amenity matches, best to worst · ring = how well it fits</p>' +
         AM_RING.map((r) => '<span class="uw-legend__i"><i class="uw-legend__am" style="--r:' + r[1] + '"></i>' + r[2] + "</span>").join("") : "") +
-      (UW.ui.layers.ghosts ? '<span class="uw-legend__i"><i style="background:#8d99a2;width:7px;height:7px"></i>Filtered out (e.g. under the revenue floor)</span>' : "") + "</details>";
+      (UW.ui.layers.ghosts ? '<span class="uw-legend__i"><i style="background:#76838c;width:8px;height:8px"></i>Filtered out (e.g. under the revenue floor)</span>' : "") + "</details>";
   }
 
   M.layers = function () {
