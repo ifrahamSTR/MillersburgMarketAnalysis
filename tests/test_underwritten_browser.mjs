@@ -82,7 +82,12 @@ await page.click("details.uw-dlg__more summary");
 await page.check("#f-tub");
 await page.click(".uw-dlg__foot button[type=submit]");
 await page.waitForSelector("#uw-place-bar:not([hidden])");
-// Place the pin by the Berlin-side cabins (countryside), by clicking the map there.
+// Let the map finish flying (a click mid-animation can miss), then place the pin by the
+// Berlin-side cabins (countryside), by clicking the map there.
+await page.waitForTimeout(900);
+await page.waitForFunction(() => { const m = UW.mapApi.map; return !m._animatingZoom && !(m._panAnim && m._panAnim._inProgress) && !m._flyToFrame; });
+await ev(() => UW.mapApi.map.setView([40.5652, -81.8560], 15, { animate: false }));
+await page.waitForTimeout(200);
 const pt = await ev(() => { const p = UW.mapApi.map.latLngToContainerPoint([40.5652, -81.8560]); const r = document.getElementById("uw-leaflet").getBoundingClientRect(); return { x: r.left + p.x, y: r.top + p.y }; });
 await page.mouse.click(pt.x, pt.y);
 await page.waitForTimeout(300);
@@ -91,7 +96,7 @@ await page.waitForTimeout(400);
 const pid = "z99999999";
 const t1 = await ev((pid) => { const p = UW.property(pid); return p && { geo: p.geo, place: p.place, beds: p.versions[0].profile.beds, hotTub: p.versions[0].profile.flags.hot_tub, opexMissing: p.versions[0].outputs.opexMissing, checks: p.versions[0].checks.map((c) => c.kind) }; }, pid);
 check(!!t1 && !!t1.geo, "the listing is saved and pinned");
-check(t1 && t1.place.zone === "Countryside" && t1.place.loc === "Countryside" && t1.place.areaName === "East, toward Berlin", "pin reads Countryside, East toward Berlin: " + JSON.stringify(t1 && t1.place));
+check(t1 && t1.place && t1.place.zone === "Countryside" && t1.place.loc === "Countryside" && t1.place.areaName === "East, toward Berlin", "pin reads Countryside, East toward Berlin: " + JSON.stringify(t1 && t1.place));
 check(t1 && t1.beds === 2 && t1.hotTub === 1, "target profile: 2 bedrooms, hot tub from the notes (“Existing hot tub”)");
 check(t1 && t1.opexMissing && t1.checks.includes("opex"), "blank OPEX: returns held back, with a data check saying why");
 
