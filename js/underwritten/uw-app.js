@@ -20,7 +20,7 @@
 /* global UWMath, UWGeo, UWCsv, UWRules */
 (function () {
   const UW = (window.UW = {});
-  UW.VERSION = "20261013-mb2";
+  UW.VERSION = "20261014-mb3";
   const LS_KEY = "millersburgUW.v1";
 
   // ---------------------------------------------------------------------------
@@ -267,9 +267,15 @@
       geocodeNote: base.geocodeNote };
   }
 
+  // A new listing's setup always carries the five standard lines; say so when Furniture or Misc has no amount yet.
+  function setupChecks(inputs) {
+    const blank = UWRules.STANDARD_SETUP.filter((st) => st.amount == null).map((st) => st.label)
+      .filter((lab) => !inputs.setup.some((x) => UWRules.setupKey(x.label) === UWRules.setupKey(lab) && x.amount != null));
+    return blank.length ? [{ kind: "setup", text: blank.join(" and ") + (blank.length > 1 ? " have" : " has") + " no amount yet. Every sheet carries these setup lines; enter the amount on the Sheet tab (yellow cells)." }] : [];
+  }
   function buildNew(l) {
     const notes = l.notes || "";
-    const inputs = l.inputs;
+    const inputs = Object.assign({}, l.inputs, { setup: UWRules.withStandardSetup(l.inputs.setup) });
     const place = placeFor(l.pin);
     if (place) place.areaName = (UW.areaById[place.area] || {}).name;
     const details = UW.parseNotes(notes);
@@ -283,7 +289,7 @@
       outputs.fiveYear.cashFlow = null; outputs.fiveYear.total = null; outputs.opexMissing = true;
       checks.push({ kind: "opex", text: "No operating expenses entered yet, so cash flow, cash on cash and total return stay blank. Enter the monthly OPEX lines on the Sheet tab (yellow cells)." });
     }
-    const v = { label: "Draft", file: null, files: [], url: l.url, sheet: null, checks, base: null, notes, inputs, scenario: "Draft", isDefault: true,
+    const v = { label: "Draft", file: null, files: [], url: l.url, sheet: null, checks: checks.concat(setupChecks(inputs)), base: null, notes, inputs, scenario: "Draft", isDefault: true,
       comps: withStatus(l.comps || []), details, profile: prof, target: prof, profileEdit: pedit,
       edited: { inputs: true, notes: false, comps: false, profile: !!pedit }, outputs, source: "recalculated" };
     return { id: l.id, kind: l.promoted ? "promoted" : "new", street: l.street, address: l.address, url: l.url, zip: l.zip, geo: l.pin || null, place,

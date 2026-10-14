@@ -96,6 +96,8 @@ await page.waitForTimeout(400);
 const pid = "z99999999";
 const t1 = await ev((pid) => { const p = UW.property(pid); return p && { geo: p.geo, place: p.place, beds: p.versions[0].profile.beds, hotTub: p.versions[0].profile.flags.hot_tub, opexMissing: p.versions[0].outputs.opexMissing, checks: p.versions[0].checks.map((c) => c.kind) }; }, pid);
 check(!!t1 && !!t1.geo, "the listing is saved and pinned");
+const st1 = await ev((pid) => { const s = UW.property(pid).versions[0].inputs.setup; return UWRules.STANDARD_SETUP.map((x) => { const m = s.find((y) => UWRules.setupKey(y.label) === UWRules.setupKey(x.label)); return m ? m.label + " " + m.amount : "MISSING " + x.label; }); }, pid);
+check(st1.every((x) => !/^MISSING|null$/.test(x)), "the new sheet carries the five standard setup lines: " + st1.join(" · "));
 check(t1 && t1.place && t1.place.zone === "Countryside" && t1.place.loc === "Countryside" && t1.place.areaName === "East, toward Berlin", "pin reads Countryside, East toward Berlin: " + JSON.stringify(t1 && t1.place));
 check(t1 && t1.beds === 2 && t1.hotTub === 1, "target profile: 2 bedrooms, hot tub from the notes (“Existing hot tub”)");
 check(t1 && t1.opexMissing && t1.checks.includes("opex"), "blank OPEX: returns held back, with a data check saying why");
@@ -149,6 +151,8 @@ const P = C.parse(csv), L = C.locate(P.rows);
 const revs = [];
 for (let i = L.comps.first; i <= L.comps.last; i++) if (P.rows[i][L.comps.col]) revs.push(+P.rows[i][L.comps.col + 1].replace(/[$,]/g, ""));
 check(revs.length === set.length && revs.every((r, i) => !i || r <= revs[i - 1]), "its comp rows in revenue order (" + revs.length + ")");
+check([[5, "Furniture / Decor / Essentials"], [16, "Misc"], [17, "CoHost Essentials"], [18, "Design/Project Management"], [19, "Install/Staging/Warehousing"]]
+  .every(([r, lab]) => P.rows[r - 1][L.setup.col].trim() === lab && P.rows[r - 1][L.setup.col + 1].trim() !== ""), "the downloaded sheet has the five standard setup lines in rows 5 and 16–19, priced");
 check(P.rows[L.price[0]][L.price[1]] === " $ 289,000 " && P.rows[L.url[0]][L.url[1]] === URL_, "price and Zillow URL written; file " + dl.suggestedFilename());
 
 console.log("\n5. OPEX GUARD\n");

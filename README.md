@@ -34,7 +34,7 @@ Area outlines are off by default. The east area's convex hull is large and overl
 - OPEX ±4%, PM 0%, appreciation 3.5%;
 - land 20%, SLAs 35%, bonus 100%, tax rate 37%.
 
-Setup items, OPEX amounts, the cleaning cost and the revenue cases start blank, because Galveston's numbers don't fit a Millersburg cabin. Until an OPEX amount is entered, a new listing's cash flow, cash on cash and total return stay blank (a data check says why), rather than showing a return with no operating costs.
+The setup list starts with just the five standard lines (below); file 101's other setup items, the OPEX amounts, the cleaning cost and the revenue cases start blank, because Galveston's numbers don't fit a Millersburg cabin. Until an OPEX amount is entered, a new listing's cash flow, cash on cash and total return stay blank (a data check says why), rather than showing a return with no operating costs.
 
 Download UW CSV writes the listing's inputs into the template's cells and clears the template's setup, OPEX, cleaning and revenue cells. The amortization block is copied byte for byte. As on Galveston, totals and returns in the CSV keep the template's values until the inputs are entered in the Google Sheet.
 
@@ -65,3 +65,5 @@ Download UW CSV writes the listing's inputs into the template's cells and clears
   - `uw-map.js`, `uw-panel.js`, `uw-cards.js`, `uw-add.js`, `uw-checks.js`, `uw-main.js` (wording and fields);
   - `uw-csv.js` (a `null` cleaning cost clears the cell).
 - `scripts/build_underwritten.py`, `tests/test_underwritten.mjs`, `tests/test_underwritten_browser.mjs`.
+
+**Standard setup lines (2026-10-14):** every new underwriting sheet made on the page carries the five lines every "UW'ing" sheet has, in their usual rows: Furniture / Decor / Essentials (row 5), Misc, CoHost Essentials, Design/Project Management and Install/Staging/Warehousing (rows 16–19). A line that is missing or has no amount gets Galveston file 101's amount ($50,000 / $25,000 / $3,500 / $25,000 / $18,250); a line the starting sheet already prices keeps its own amount. Rule: `UWRules.withStandardSetup` in `js/underwritten/uw-rules.js`, applied when a listing is created and whenever a new-listing sheet is shown or downloaded.

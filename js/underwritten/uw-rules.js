@@ -315,6 +315,32 @@
     return out;
   }
 
-  return { SHEET_FLAGS, FLAG_LABEL, CLASSES, TAG, roomId, isZillow, valueChanges, classify, canPick, miles, autoNote, retag, rowFromListing, addToSet, appendDistance, parseNotes,
+  // ---------------------------------------------------------------------------
+  // Standard setup lines: on every "UW'ing" sheet, in the same rows of the Optimzation List
+  // (Furniture in row 5; Misc, CoHost, Design and Install in rows 16-19). Every new sheet made
+  // on this page carries all five. The amounts are Galveston file 101's (the user's choice); a
+  // line the starting sheet already prices keeps its own amount. "row" is the slot (0 = row 5).
+  // ---------------------------------------------------------------------------
+  const STANDARD_SETUP = [
+    { label: "Furniture / Decor / Essentials", amount: 50000, row: 0 },
+    { label: "Misc", amount: 25000, row: 11 },
+    { label: "CoHost Essentials", amount: 3500, row: 12 },
+    { label: "Design/Project Management", amount: 25000, row: 13 },
+    { label: "Install/Staging/Warehousing", amount: 18250, row: 14 },
+  ];
+  const setupKey = (s) => String(s || "").toLowerCase().replace(/\s*\/\s*/g, "/").replace(/\s+/g, " ").trim();
+  /** The setup list with every standard line: a missing one is added (in its usual row, at file 101's amount);
+   *  one with no amount anywhere gets file 101's; a priced one keeps its own amount. */
+  function withStandardSetup(setup) {
+    const out = (setup || []).map((x) => Object.assign({}, x));
+    STANDARD_SETUP.forEach((s) => {
+      const same = out.filter((x) => setupKey(x.label) === setupKey(s.label));
+      if (!same.length) out.push(Object.assign({}, s));
+      else if (same.every((x) => x.amount == null)) same[0].amount = s.amount;
+    });
+    return out;
+  }
+
+  return { STANDARD_SETUP, withStandardSetup, setupKey, SHEET_FLAGS, FLAG_LABEL, CLASSES, TAG, roomId, isZillow, valueChanges, classify, canPick, miles, autoNote, retag, rowFromListing, addToSet, appendDistance, parseNotes,
     PROFILE_FLAGS, AMENITY_ORDER, MATCH_ONLY, PROFILE_LABEL, profilePrefill, profileWith, amenityInfo, matchLocation, matchAmenity, flagOf };
 });

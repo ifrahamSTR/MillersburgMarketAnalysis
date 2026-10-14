@@ -11,7 +11,7 @@
  * revenue cases left blank for Millersburg numbers, and no comps. Once
  * Millersburg targets are underwritten, one of their sheets can be the start.
  */
-/* global UWGeo */
+/* global UWGeo, UWRules */
 (function () {
   const UW = window.UW, E = UW.esc;
   const A = (UW.addApi = {});
@@ -191,6 +191,7 @@
       const inputs = UW.clone(base.inputs);
       inputs.price = price;
       inputs.revenue = { low: null, mid: null, high: null };
+      inputs.setup = UWRules.withStandardSetup(inputs.setup);  // the five lines every sheet carries
       id = za.zpid ? "z" + za.zpid : "n" + Date.now().toString(36);
       if (UW.property(id)) id += "-" + Date.now().toString(36);
       UW.addListing(Object.assign(common, { id, kind: "new", created: new Date().toISOString().slice(0, 10), template: t.file, templateLabel: t.label, inputs, comps: [],

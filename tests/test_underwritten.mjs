@@ -88,9 +88,9 @@ const newModel = Object.assign(JSON.parse(JSON.stringify(T.inputs)), {
   ok(cell(L.cleaningCost) === "" && cell(L.cleaningTurns) === "", "new listing: the template's cleaning cost / turns were not cleared");
   ok(L.revenue.every((rc) => cell(rc) === ""), "new listing: revenue cases not empty");
   let setupLeft = 0, opexLeft = 0;
-  for (let i = L.setup.first; i <= L.setup.last; i++) if (O.rows[i][L.setup.col] || O.rows[i][L.setup.col + 1]) setupLeft++;
+  for (let i = L.setup.first; i <= L.setup.last; i++) if ((O.rows[i][L.setup.col] || O.rows[i][L.setup.col + 1]) && !R.STANDARD_SETUP.some((s) => R.setupKey(s.label) === R.setupKey(O.rows[i][L.setup.col]))) setupLeft++;
   for (let i = L.opex.first; i <= L.opex.last; i++) if (O.rows[i][L.opex.col] && O.rows[i][L.opex.col + 1]) opexLeft++;
-  ok(setupLeft === 0, `new listing: ${setupLeft} setup rows from the Galveston template left in`);
+  ok(setupLeft === 0, `new listing: ${setupLeft} setup rows from the Galveston template left in (besides the five standard lines)`);
   ok(opexLeft === 0, `new listing: ${opexLeft} OPEX amounts from the Galveston template left in`);
   const revs = [];
   for (let i = L.comps.first; i <= L.comps.last; i++) if (O.rows[i][L.comps.col]) revs.push(+O.rows[i][L.comps.col + 1].replace(/[$,]/g, ""));
@@ -104,14 +104,14 @@ const newModel = Object.assign(JSON.parse(JSON.stringify(T.inputs)), {
 console.log("\n3. BLANK TEMPLATE\n");
 {
   const I = T.inputs, K = T.kept;
-  ok(I.price == null && I.setup.length === 0 && I.cleaningCost == null && I.cleaningTurns == null, "template: price / setup / cleaning not blank");
+  ok(I.price == null && I.setup.length === 5 && I.setup.every((x) => R.STANDARD_SETUP.some((s) => s.label === x.label && s.amount === x.amount)) && I.cleaningCost == null && I.cleaningTurns == null, "template: price / cleaning not blank, or setup isn't exactly the five standard lines");
   ok(I.opex.length > 0 && I.opex.every((o) => o.amount == null), "template: OPEX amounts not blank (labels should stay)");
   ok(["low", "mid", "high"].every((c) => I.revenue[c] == null), "template: revenue not blank");
   ok(Object.keys(K).every((k) => I[k] === K[k] && K[k] === T.sheetInputs[k]), "template: financing / tax assumptions differ from the sheet's");
   const out = M.compute(Object.assign({}, I, { price: 300000 }));
-  ok(Math.abs(out.down - 60000) < 0.01 && Math.abs(out.loan - 240000) < 0.01 && Math.abs(out.closing - 9000) < 0.01 && out.opexMonthly === 0 && out.setupTotal === 0,
-    "template: $300k purchase does not give 20% down / 3% closing / no OPEX or setup");
-  console.log(`  ok   kept: ${Object.entries(K).map(([k, v]) => k + " " + v).join(", ")}; setup, OPEX amounts, cleaning and revenue blank`);
+  ok(Math.abs(out.down - 60000) < 0.01 && Math.abs(out.loan - 240000) < 0.01 && Math.abs(out.closing - 9000) < 0.01 && out.opexMonthly === 0 && out.setupTotal === 121750,
+    "template: $300k purchase does not give 20% down / 3% closing / no OPEX / the five standard setup lines ($121,750)");
+  console.log(`  ok   kept: ${Object.entries(K).map(([k, v]) => k + " " + v).join(", ")}; OPEX amounts, cleaning and revenue blank; setup = the five standard lines`);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +197,32 @@ console.log("\n6. MATCHING\n");
   listings.slice(0, 20).forEach((l) => { full = R.addToSet(full, l, { byId, mode: "location", note: note("location") }).rows; });
   ok(full.length === 15, "the comp set is not capped at 15");
   console.log("  ok   comp set: no duplicates, retag to [Location + Amenity match], note: " + rows[0].notes);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nSTANDARD SETUP LINES: every new sheet carries the five, at Galveston file 101's amounts\n");
+{
+  const bad = (m) => fail("standard setup: " + m);
+  const WANT = [["Furniture / Decor / Essentials", 50000, 5], ["Misc", 25000, 16], ["CoHost Essentials", 3500, 17], ["Design/Project Management", 25000, 18], ["Install/Staging/Warehousing", 18250, 19]];
+  const key = (s) => R.setupKey(s);
+  const fresh = R.withStandardSetup([]);
+  if (!(fresh.length === 5 && WANT.every(([l, a]) => fresh.some((x) => key(x.label) === key(l) && x.amount === a)))) bad("an empty setup doesn't get the five lines at 101's amounts");
+  const kept = R.withStandardSetup([{ label: "Furniture / Decor / Essentials", amount: 15000 }, { label: "Hot Tub", amount: 16000 }, { label: "Misc", amount: 50000 }, { label: "Misc", amount: null }]);
+  if (!(kept.find((x) => key(x.label) === key("Furniture / Decor / Essentials")).amount === 15000 && kept.filter((x) => key(x.label) === "misc").map((x) => x.amount).join() === "50000," && kept.length === 7))
+    bad("a priced line was changed, or a second Misc was filled");
+  const filled = R.withStandardSetup([{ label: "Misc", amount: null }]);
+  if (filled.find((x) => key(x.label) === "misc").amount !== 25000) bad("a blank Misc line wasn't given 101's amount");
+  // Exported from this site's new-listing template, the five land in rows 5 and 16-19 with their amounts.
+  const tdir = (UW.templates || []).some((t) => t.file === UW.templateFile) ? "underwriting/template" : "underwriting/source_csv";
+  const TT = readFileSync(join(ROOT, tdir, UW.templateFile), "utf8"), P0 = C.parse(TT), L0 = C.locate(P0.rows);
+  const base = (UW.templates || []).find((t) => t.file === UW.templateFile);
+  const inputs = base ? JSON.parse(JSON.stringify(base.inputs)) : JSON.parse(JSON.stringify(UW.properties.flatMap((p) => p.versions).find((v) => v.file === UW.templateFile).inputs));
+  inputs.setup = R.withStandardSetup(inputs.setup);
+  const out = C.parse(C.exportSheet(TT, Object.assign(inputs, { notes: "n", url: "https://www.zillow.com/homedetails/1-Test-Rd/1_zpid/", price: 400000, comps: [] })));
+  const cell = (r) => [out.rows[r - 1][L0.setup.col].trim(), out.rows[r - 1][L0.setup.col + 1].trim()];
+  const placed = WANT.every(([l, a, r]) => key(cell(r)[0]) === key(l) && (base ? cell(r)[1].replace(/[$\s,]/g, "") === String(a) : cell(r)[1] !== ""));
+  if (!placed) bad("exported template rows 5/16-19: " + WANT.map(([, , r]) => cell(r).join(" ")).join(" | "));
+  console.log("  " + (placed ? "ok  " : "FAIL") + " " + UW.templateFile + ": rows 5, 16, 17, 18, 19 hold " + WANT.map(([, , r]) => cell(r).join(" ")).join(" · "));
 }
 
 console.log(`\n${failures ? failures + " FAILURE" + (failures === 1 ? "" : "S") : "All " + checks + " checks passed"}.`);
