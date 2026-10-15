@@ -5,8 +5,8 @@
 // by hand, not looked up on OpenStreetMap. Skips, with a message, if playwright-core is missing.
 //  - the page loads with no console errors: 62 comp dots, hero tiles, village limits layer
 //  - Add a Zillow listing: address read from the URL, saved, pin placed by clicking the map
-//  - the new target's card: setting / zone / area from the pin; blank-OPEX guard (no cash on
-//    cash until OPEX is entered, then it appears)
+//  - the new target's card: setting / zone / area from the pin; every OPEX line priced
+//    (Galveston 101's amounts, rounded), so returns compute as soon as revenue is entered
 //  - Match by location: only the target's zone, bedrooms +/-1, $40k+, nearest first; turning
 //    "Same zone" off widens it; Match by amenities ranks all 62
 //  - a comp popup's "Copy row" and the list's copy give the same 15-column line; adding
@@ -100,7 +100,7 @@ const st1 = await ev((pid) => { const s = UW.property(pid).versions[0].inputs.se
 check(st1.every((x) => !/^MISSING|null$/.test(x)), "the new sheet carries the five standard setup lines: " + st1.join(" · "));
 check(t1 && t1.place && t1.place.zone === "Countryside" && t1.place.loc === "Countryside" && t1.place.areaName === "East, toward Berlin", "pin reads Countryside, East toward Berlin: " + JSON.stringify(t1 && t1.place));
 check(t1 && t1.beds === 2 && t1.hotTub === 1, "target profile: 2 bedrooms, hot tub from the notes (“Existing hot tub”)");
-check(t1 && t1.opexMissing && t1.checks.includes("opex"), "blank OPEX: returns held back, with a data check saying why");
+check(t1 && !t1.opexMissing, "OPEX starts priced (Galveston 101's amounts, rounded), so returns compute once revenue is set");
 
 console.log("\n3. MATCH BY LOCATION / AMENITIES\n");
 await ev((pid) => UW.select(pid), pid);
@@ -155,13 +155,14 @@ check([[5, "Furniture / Decor / Essentials"], [16, "Misc"], [17, "CoHost Essenti
   .every(([r, lab]) => P.rows[r - 1][L.setup.col].trim() === lab && P.rows[r - 1][L.setup.col + 1].trim() !== ""), "the downloaded sheet has the five standard setup lines in rows 5 and 16–19, priced");
 check(P.rows[L.price[0]][L.price[1]] === " $ 289,000 " && P.rows[L.url[0]][L.url[1]] === URL_, "price and Zillow URL written; file " + dl.suggestedFilename());
 
-console.log("\n5. OPEX GUARD\n");
+console.log("\n5. OPEX AND RETURNS\n");
 await ev((pid) => { const v = UW.property(pid).versions[0]; const inp = JSON.parse(JSON.stringify(v.inputs)); inp.revenue = { low: 40000, mid: 50000, high: 60000 }; UW.setInputs(pid, "Draft", inp); }, pid);
 const g1 = await ev((pid) => UW.property(pid).versions[0].outputs.cases.mid.coc, pid);
-check(g1 == null, "revenue entered, OPEX still blank: cash on cash stays blank");
+const ox = await ev((pid) => { const v = UW.property(pid).versions[0]; return { m: v.outputs.opexMonthly, lines: v.inputs.opex.filter((o) => !o.cleaning && o.amount == null).length }; }, pid);
+check(g1 != null && ox.m === 4850 && ox.lines === 0, "revenue entered: cash on cash computes straight away; OPEX $" + ox.m + "/month, no empty line");
 await ev((pid) => { const v = UW.property(pid).versions[0]; const inp = JSON.parse(JSON.stringify(v.inputs)); inp.opex.find((o) => /Utilities/i.test(o.label)).amount = 400; UW.setInputs(pid, "Draft", inp); }, pid);
 const g2 = await ev((pid) => { const v = UW.property(pid).versions[0]; return { coc: v.outputs.cases.mid.coc, missing: !!v.outputs.opexMissing }; }, pid);
-check(g2.coc != null && !g2.missing, "an OPEX line entered: cash on cash appears (" + (g2.coc * 100).toFixed(2) + "% mid)");
+check(g2.coc != null && !g2.missing, "editing an OPEX line recalculates cash on cash (" + (g2.coc * 100).toFixed(2) + "% mid)");
 await ev((pid) => { UW.ui.cardTab[pid] = "sheet"; UW.ui.expanded.add(pid); UW.cardsApi.renderCard(pid); }, pid);
 await page.waitForTimeout(800);
 check(await page.locator("#uw-card-" + pid).isVisible(), "the target's card renders with its Sheet tab");

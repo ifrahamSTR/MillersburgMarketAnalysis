@@ -192,6 +192,7 @@
       inputs.price = price;
       inputs.revenue = { low: null, mid: null, high: null };
       inputs.setup = UWRules.withStandardSetup(inputs.setup);  // the five lines every sheet carries
+      Object.assign(inputs, UWRules.withStandardOpex(inputs));  // every OPEX line priced, never empty
       id = za.zpid ? "z" + za.zpid : "n" + Date.now().toString(36);
       if (UW.property(id)) id += "-" + Date.now().toString(36);
       UW.addListing(Object.assign(common, { id, kind: "new", created: new Date().toISOString().slice(0, 10), template: t.file, templateLabel: t.label, inputs, comps: [],

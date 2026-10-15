@@ -65,6 +65,12 @@ TEMPLATE_DIR = ROOT / "underwriting" / "template"
 STANDARD_SETUP = [{"label": "Furniture / Decor / Essentials", "amount": 50000, "row": 0}, {"label": "Misc", "amount": 25000, "row": 11},
                   {"label": "CoHost Essentials", "amount": 3500, "row": 12}, {"label": "Design/Project Management", "amount": 25000, "row": 13},
                   {"label": "Install/Staging/Warehousing", "amount": 18250, "row": 14}]
+# The OPEX lines every new sheet carries, monthly, at Galveston file 101's amounts rounded ($924 property
+# taxes -> $900) and $0 where 101 left a line blank (as js/underwritten/uw-rules.js STANDARD_OPEX); cleaning is
+# 101's $275 x 6 turns.
+STANDARD_OPEX = {"internet": 100, "utilities": 500, "pest control": 50, "pool/hot tub maintenance": 200, "outdoor/landscaping": 100,
+                 "software": 0, "household supplies": 250, "other": 0, "property taxes (monthly)": 900, "insurance hoi": 600,
+                 "capex reserve": 500, "misc": 0, "hoa fees": 0, "pmi": 0}
 MIN_REV = 40000  # default revenue floor for Match by location: the market median ($41.9k), rounded down
 
 
@@ -908,7 +914,8 @@ for tp in sorted(TEMPLATE_DIR.glob("*.csv")):
         validation["parse"].append({"file": "template/" + tp.name, "issue": iss})
     ti = t["inputs"]
     neutral = dict(ti, price=None, setup=[dict(x) for x in STANDARD_SETUP], revenue={"low": None, "mid": None, "high": None}, cleaningCost=None, cleaningTurns=None,
-                   opex=[dict(o, amount=None) for o in ti["opex"]])
+                   opex=[dict(o, amount=None if o.get("cleaning") else STANDARD_OPEX.get(o["label"].strip().lower()), std=1) for o in ti["opex"]])
+    neutral.update(cleaningCost=275, cleaningTurns=6)
     templates.append({"file": tp.name, "path": "underwriting/template/" + tp.name, "label": "template", "street": "Blank sheet",
                       "kept": {k: ti[k] for k in ("dpPct", "rate", "closingPct", "mortgageYears", "amortYears", "opexRangePct", "pmPct", "apprPct",
                                                    "landPct", "slaPct", "bonusPct", "taxRate")},

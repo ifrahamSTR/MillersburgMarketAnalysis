@@ -209,9 +209,10 @@
         if (!lab || !(lab in byLabel)) continue;
         const o = byLabel[lab];
         const amt = o.cleaning && model.cleaningCost != null && model.cleaningTurns != null ? model.cleaningCost * model.cleaningTurns : o.amount;
-        // An empty value, or a zero on a line the source left blank, stays blank.
+        // An empty value, or a zero on a line the source left blank, stays blank, unless the page filled
+        // the line in as a standard default (o.std): then a zero is written as the sheet's "$ -".
         const prev = rows[i][L.opex.col + 1];
-        set([i, L.opex.col + 1], amt == null || amt === "" || (Number(amt) === 0 && prev === "") ? "" : acct(amt));
+        set([i, L.opex.col + 1], amt == null || amt === "" || (Number(amt) === 0 && prev === "" && !o.std) ? "" : acct(amt));
       }
       // Left out of the model = keep the source's cell; null = cleared (the blank template's inputs).
       if (model.cleaningCost !== undefined) set(L.cleaningCost, model.cleaningCost == null ? "" : acct(model.cleaningCost));

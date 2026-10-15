@@ -85,33 +85,33 @@ const newModel = Object.assign(JSON.parse(JSON.stringify(T.inputs)), {
   ok(other === 0, `new listing: ${other} non-input rows changed`);
   const cell = (rc) => O.rows[rc[0]][rc[1]];
   ok(cell(L.price) === " $ 289,000 " && cell(L.dpPct) === "20%" && cell(L.rate) === "7.25%" && cell(L.closingPct) === "3.00%", "new listing: purchase inputs not written as the sheet formats them");
-  ok(cell(L.cleaningCost) === "" && cell(L.cleaningTurns) === "", "new listing: the template's cleaning cost / turns were not cleared");
+  ok(cell(L.cleaningCost) === " $ 275 " && cell(L.cleaningTurns) === "6", "new listing: cleaning isn't the standard $275 x 6 turns");
   ok(L.revenue.every((rc) => cell(rc) === ""), "new listing: revenue cases not empty");
   let setupLeft = 0, opexLeft = 0;
   for (let i = L.setup.first; i <= L.setup.last; i++) if ((O.rows[i][L.setup.col] || O.rows[i][L.setup.col + 1]) && !R.STANDARD_SETUP.some((s) => R.setupKey(s.label) === R.setupKey(O.rows[i][L.setup.col]))) setupLeft++;
-  for (let i = L.opex.first; i <= L.opex.last; i++) if (O.rows[i][L.opex.col] && O.rows[i][L.opex.col + 1]) opexLeft++;
+  for (let i = L.opex.first; i <= L.opex.last; i++) if (O.rows[i][L.opex.col].trim() && !O.rows[i][L.opex.col + 1].trim()) opexLeft++;
   ok(setupLeft === 0, `new listing: ${setupLeft} setup rows from the Galveston template left in (besides the five standard lines)`);
-  ok(opexLeft === 0, `new listing: ${opexLeft} OPEX amounts from the Galveston template left in`);
+  ok(opexLeft === 0, `new listing: ${opexLeft} OPEX lines left empty`);
   const revs = [];
   for (let i = L.comps.first; i <= L.comps.last; i++) if (O.rows[i][L.comps.col]) revs.push(+O.rows[i][L.comps.col + 1].replace(/[$,]/g, ""));
   ok(revs.length === 4 && revs.every((r, i) => !i || r <= revs[i - 1]), "new listing: comp rows missing or not revenue high to low");
   ok(O.rows[L.comps.first][L.comps.col + 14] === "note\twith tab", "new listing: comp note not written as typed");
   console.log(`  ${failures ? "see above" : "ok  "} new listing from the blank template: amortization rows ${L.amort.first + 1}-${L.amort.last + 1} identical, ` +
-    "template setup / OPEX / cleaning / revenue cleared, 4 comps in revenue order");
+    "setup = the five standard lines, every OPEX line priced, 4 comps in revenue order");
 }
 
 // ---------------------------------------------------------------------------
 console.log("\n3. BLANK TEMPLATE\n");
 {
   const I = T.inputs, K = T.kept;
-  ok(I.price == null && I.setup.length === 5 && I.setup.every((x) => R.STANDARD_SETUP.some((s) => s.label === x.label && s.amount === x.amount)) && I.cleaningCost == null && I.cleaningTurns == null, "template: price / cleaning not blank, or setup isn't exactly the five standard lines");
-  ok(I.opex.length > 0 && I.opex.every((o) => o.amount == null), "template: OPEX amounts not blank (labels should stay)");
+  ok(I.price == null && I.setup.length === 5 && I.setup.every((x) => R.STANDARD_SETUP.some((s) => s.label === x.label && s.amount === x.amount)) && I.cleaningCost === 275 && I.cleaningTurns === 6, "template: price / cleaning not blank, or setup isn't exactly the five standard lines");
+  ok(I.opex.length === 15 && I.opex.every((o) => o.cleaning || o.amount != null), "template: an OPEX line has no amount");
   ok(["low", "mid", "high"].every((c) => I.revenue[c] == null), "template: revenue not blank");
   ok(Object.keys(K).every((k) => I[k] === K[k] && K[k] === T.sheetInputs[k]), "template: financing / tax assumptions differ from the sheet's");
   const out = M.compute(Object.assign({}, I, { price: 300000 }));
-  ok(Math.abs(out.down - 60000) < 0.01 && Math.abs(out.loan - 240000) < 0.01 && Math.abs(out.closing - 9000) < 0.01 && out.opexMonthly === 0 && out.setupTotal === 121750,
-    "template: $300k purchase does not give 20% down / 3% closing / no OPEX / the five standard setup lines ($121,750)");
-  console.log(`  ok   kept: ${Object.entries(K).map(([k, v]) => k + " " + v).join(", ")}; OPEX amounts, cleaning and revenue blank; setup = the five standard lines`);
+  ok(Math.abs(out.down - 60000) < 0.01 && Math.abs(out.loan - 240000) < 0.01 && Math.abs(out.closing - 9000) < 0.01 && out.opexMonthly === 4850 && out.setupTotal === 121750,
+    "template: $300k purchase does not give 20% down / 3% closing / standard OPEX $4,850 a month / standard setup $121,750");
+  console.log(`  ok   kept: ${Object.entries(K).map(([k, v]) => k + " " + v).join(", ")}; revenue blank; setup = the five standard lines, OPEX = the fifteen standard lines`);
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +223,30 @@ console.log("\nSTANDARD SETUP LINES: every new sheet carries the five, at Galves
   const placed = WANT.every(([l, a, r]) => key(cell(r)[0]) === key(l) && (base ? cell(r)[1].replace(/[$\s,]/g, "") === String(a) : cell(r)[1] !== ""));
   if (!placed) bad("exported template rows 5/16-19: " + WANT.map(([, , r]) => cell(r).join(" ")).join(" | "));
   console.log("  " + (placed ? "ok  " : "FAIL") + " " + UW.templateFile + ": rows 5, 16, 17, 18, 19 hold " + WANT.map(([, , r]) => cell(r).join(" ")).join(" · "));
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nSTANDARD OPEX LINES: every new sheet carries all fifteen, priced (Galveston file 101, rounded)\n");
+{
+  const bad = (m) => fail("standard OPEX: " + m);
+  const fresh = R.withStandardOpex({ opex: [], cleaningCost: null, cleaningTurns: null });
+  if (!(fresh.opex.length === 15 && fresh.opex.every((o) => o.cleaning || typeof o.amount === "number") && fresh.cleaningCost === 275 && fresh.cleaningTurns === 6)) bad("an empty OPEX list isn't filled");
+  if (M.opexMonthly(fresh) !== 4850) bad("the defaults total $" + M.opexMonthly(fresh) + " a month, not $4,850");
+  const kept = R.withStandardOpex({ opex: [{ label: "Property Taxes (Monthly)", amount: 385 }, { label: "PMI", amount: null }], cleaningCost: 150, cleaningTurns: 8 });
+  if (!(kept.opex.find((o) => o.label === "Property Taxes (Monthly)").amount === 385 && kept.opex.find((o) => o.label === "PMI").amount === 0 && kept.cleaningCost === 150 && kept.cleaningTurns === 8))
+    bad("a priced line or the cleaning cost changed, or a blank line wasn't filled");
+  // Exported from this site's new-listing template (blank lines and all), every OPEX row has a value; zeros show as "$ -".
+  const tdir = (UW.templates || []).some((t) => t.file === UW.templateFile) ? "underwriting/template" : "underwriting/source_csv";
+  const TT = readFileSync(join(ROOT, tdir, UW.templateFile), "utf8"), L0 = C.locate(C.parse(TT).rows);
+  const base = (UW.templates || []).find((t) => t.file === UW.templateFile) || UW.properties.flatMap((p) => p.versions).find((v) => v.file === UW.templateFile);
+  const inputs = R.withStandardOpex(Object.assign(JSON.parse(JSON.stringify(base.inputs)), { setup: R.withStandardSetup(base.inputs.setup) }));
+  const out = C.parse(C.exportSheet(TT, Object.assign(inputs, { notes: "n", url: "https://www.zillow.com/homedetails/1-Test-Rd/1_zpid/", price: 400000, comps: [] })));
+  const empty = [];
+  for (let i = L0.opex.first; i <= L0.opex.last; i++) if (out.rows[i][L0.opex.col].trim() && !out.rows[i][L0.opex.col + 1].trim()) empty.push(out.rows[i][L0.opex.col].trim());
+  if (empty.length) bad("exported OPEX lines left empty: " + empty.join(", "));
+  const shown = [];
+  for (let i = L0.opex.first; i <= L0.opex.last; i++) shown.push(out.rows[i][L0.opex.col].trim() + " " + out.rows[i][L0.opex.col + 1].trim());
+  console.log("  " + (empty.length ? "FAIL" : "ok  ") + " " + UW.templateFile + ": " + shown.join(" · "));
 }
 
 console.log(`\n${failures ? failures + " FAILURE" + (failures === 1 ? "" : "S") : "All " + checks + " checks passed"}.`);

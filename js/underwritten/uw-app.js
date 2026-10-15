@@ -20,7 +20,7 @@
 /* global UWMath, UWGeo, UWCsv, UWRules */
 (function () {
   const UW = (window.UW = {});
-  UW.VERSION = "20261014-mb3";
+  UW.VERSION = "20261015-mb4";
   const LS_KEY = "millersburgUW.v1";
 
   // ---------------------------------------------------------------------------
@@ -275,7 +275,7 @@
   }
   function buildNew(l) {
     const notes = l.notes || "";
-    const inputs = Object.assign({}, l.inputs, { setup: UWRules.withStandardSetup(l.inputs.setup) });
+    const inputs = UWRules.withStandardOpex(Object.assign({}, l.inputs, { setup: UWRules.withStandardSetup(l.inputs.setup) }));
     const place = placeFor(l.pin);
     if (place) place.areaName = (UW.areaById[place.area] || {}).name;
     const details = UW.parseNotes(notes);

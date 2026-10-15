@@ -341,6 +341,33 @@
     return out;
   }
 
-  return { STANDARD_SETUP, withStandardSetup, setupKey, SHEET_FLAGS, FLAG_LABEL, CLASSES, TAG, roomId, isZillow, valueChanges, classify, canPick, miles, autoNote, retag, rowFromListing, addToSet, appendDistance, parseNotes,
+  // Standard OPEX lines (monthly), rows 5-19 of the sheet's OPEX block. Every new sheet made on
+  // this page carries all fifteen with a value, never empty: Galveston file 101's amounts, rounded
+  // (property taxes $924 -> $900), $0 where 101 left a line blank, and cleaning at 101's $275 x 6
+  // turns. A line the starting sheet already prices keeps its own amount. "std" marks a default
+  // the page filled in, so a $0 is written as the sheet's "$ -" rather than a blank cell.
+  const STANDARD_OPEX = [
+    { label: "Internet", amount: 100 }, { label: "Utilities", amount: 500 }, { label: "Pest Control", amount: 50 },
+    { label: "Pool/Hot Tub Maintenance", amount: 200 }, { label: "Outdoor/Landscaping", amount: 100 },
+    { label: "Software", amount: 0, note: "Keep at zero" }, { label: "Household Supplies", amount: 250 },
+    { label: "Cleaning", amount: null, cleaning: true }, { label: "Other", amount: 0 },
+    { label: "Property Taxes (Monthly)", amount: 900 }, { label: "Insurance HOI", amount: 600 }, { label: "CapEx Reserve", amount: 500 },
+    { label: "MISC", amount: 0 }, { label: "HOA fees", amount: 0 }, { label: "PMI", amount: 0 },
+  ];
+  const STANDARD_CLEANING = { cost: 275, turns: 6 };
+  /** Inputs with every standard OPEX line priced (missing or blank lines get the defaults) and a cleaning cost and turns. */
+  function withStandardOpex(inputs) {
+    const out = Object.assign({}, inputs, { opex: (inputs.opex || []).map((o) => Object.assign({}, o)) });
+    STANDARD_OPEX.forEach((s) => {
+      const same = out.opex.filter((o) => setupKey(o.label) === setupKey(s.label));
+      if (!same.length) out.opex.push(Object.assign({ std: 1 }, s));
+      else if (!s.cleaning && same.every((o) => o.amount == null)) Object.assign(same[0], { amount: s.amount, std: 1 });
+    });
+    if (out.cleaningCost == null) out.cleaningCost = STANDARD_CLEANING.cost;
+    if (out.cleaningTurns == null) out.cleaningTurns = STANDARD_CLEANING.turns;
+    return out;
+  }
+
+  return { STANDARD_OPEX, STANDARD_CLEANING, withStandardOpex, STANDARD_SETUP, withStandardSetup, setupKey, SHEET_FLAGS, FLAG_LABEL, CLASSES, TAG, roomId, isZillow, valueChanges, classify, canPick, miles, autoNote, retag, rowFromListing, addToSet, appendDistance, parseNotes,
     PROFILE_FLAGS, AMENITY_ORDER, MATCH_ONLY, PROFILE_LABEL, profilePrefill, profileWith, amenityInfo, matchLocation, matchAmenity, flagOf };
 });
